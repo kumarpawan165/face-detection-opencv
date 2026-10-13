@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face Detection | OpenCV Project</title>
+<style>
+  :root {
+    --bg: #070b16;
+    --card: #101728;
+    --line: #1e2a44;
+    --text: #e6ebf7;
+    --muted: #8a96b3;
+    --cyan: #22e3ee;
+    --purple: #a45cf0;
+    --orange: #ff7a45;
+    --green: #3ddc84;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 20% -10%, #14224a55, transparent), var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 20px 16px 60px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .logo { font-family: monospace; color: var(--cyan); font-weight: 700; font-size: 1.1rem; }
+  .back { color: var(--orange); text-decoration: none; font-size: .9rem; }
+  .label { font-family: monospace; color: var(--cyan); font-size: .85rem; letter-spacing: .15em; }
+  h1 { font-size: clamp(1.7rem, 5vw, 2.4rem); margin: 6px 0 8px; }
+  h1 span { color: var(--purple); }
+  .sub { color: var(--muted); max-width: 640px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 24px; }
+  .tag { font-size: .78rem; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--cyan); background: #0c1426; }
+
+  .stage {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px; position: relative;
+  }
+  .screen {
+    position: relative; width: 100%; aspect-ratio: 4 / 3; background: #04070f;
+    border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  canvas { width: 100%; height: 100%; object-fit: contain; display: none; }
+  video { display: none; }
+  .placeholder { color: var(--muted); text-align: center; padding: 20px; font-size: .95rem; }
+  .status { margin-top: 10px; font-size: .85rem; color: var(--muted); min-height: 1.4em; }
+  .status.err { color: #ff6b6b; }
+  .status.ok { color: var(--green); }
+
+  .stats { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .stat { flex: 1 1 90px; background: #0c1426; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+  .stat b { display: block; font-size: 1.3rem; color: var(--cyan); font-family: monospace; }
+  .stat small { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+
+  .controls { display: grid; gap: 14px; margin-top: 16px; }
+  .ctl label { display: flex; justify-content: space-between; font-size: .9rem; margin-bottom: 4px; }
+  .ctl label span { color: var(--cyan); font-family: monospace; }
+  .ctl p { color: var(--muted); font-size: .78rem; margin-top: 2px; }
+  input[type=range] { width: 100%; accent-color: var(--purple); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+  button {
+    background: linear-gradient(135deg, var(--cyan), var(--purple)); color: #05070f; font-weight: 700;
+    border: 0; border-radius: 10px; padding: 11px 20px; font-size: .95rem; cursor: pointer;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .toggle { display: flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--text); }
+  .toggle input { accent-color: var(--purple); width: 18px; height: 18px; }
+
+  section.info { margin-top: 36px; }
+  h2 { font-size: 1.25rem; margin-bottom: 10px; }
+  h2 span { color: var(--purple); }
+  ol, ul { padding-left: 20px; color: var(--muted); }
+  li { margin: 5px 0; }
+  li b { color: var(--text); }
+  .grid2 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+  .box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  code { font-family: monospace; background: #0c1426; padding: 1px 6px; border-radius: 5px; color: var(--cyan); font-size: .85em; }
+  footer { margin-top: 40px; color: var(--muted); font-size: .8rem; text-align: center; }
+  footer a { color: var(--orange); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="logo">&lt;PK /&gt;</div>
+    <a class="back" href="../portfolio/">&larr; Back to portfolio</a>
+  </div>
+
+  <div class="label">// computer.vision</div>
+  <h1>Real-Time <span>Face Detection</span></h1>
+  <p class="sub">Webcam-based face detection that runs fully in your browser using OpenCV and a Haar Cascade classifier. Nothing is uploaded; video never leaves your device.</p>
+  <div class="tags">
+    <span class="tag">OpenCV</span><span class="tag">Haar Cascade</span><span class="tag">JavaScript</span><span class="tag">Python version included</span>
+  </div>
+
+  <div class="stage">
+    <div class="screen">
+      <div class="placeholder" id="placeholder">Press <b>Start Camera</b> to begin.<br>The browser will ask for camera permission.</div>
+      <video id="video" playsinline muted></video>
+      <canvas id="out"></canvas>
+    </div>
+    <div class="status" id="status">Loading OpenCV&hellip;</div>
+
+    <div class="stats">
+      <div class="stat"><b id="faceCount">0</b><small>Faces</small></div>
+      <div class="stat"><b id="fps">0</b><small>FPS</small></div>
+      <div class="stat"><b id="ms">0</b><small>ms / detect</small></div>
+    </div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label>scaleFactor <span id="scaleVal">1.30</span></label>
+        <input type="range" id="scale" min="1.05" max="1.6" step="0.05" value="1.3">
+        <p>How much the image is shrunk at each pass. Lower = more thorough but slower.</p>
+      </div>
+      <div class="ctl">
+        <label>minNeighbors <span id="neighVal">5</span></label>
+        <input type="range" id="neigh" min="1" max="10" step="1" value="5">
+        <p>How many overlapping detections are needed to accept a face. Lower = more false boxes, higher = may miss real faces.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="startBtn" disabled>Start Camera</button>
+      <button id="stopBtn" class="ghost" disabled>Stop</button>
+      <label class="toggle"><input type="checkbox" id="edgeToggle"> Show edges (Canny)</label>
+    </div>
+  </div>
+
+  <section class="info">
+    <h2>How it <span>works</span></h2>
+    <ol>
+      <li><b>Capture:</b> a frame is taken from the webcam (video is just many photos per second).</li>
+      <li><b>Preprocess:</b> the frame is converted to grayscale. It is faster, and face detection does not need colour.</li>
+      <li><b>Detect:</b> a pre-trained Haar Cascade classifier slides a window across the image at several scales (<code>detectMultiScale</code>).</li>
+      <li><b>Draw:</b> a bounding box is drawn around every face found.</li>
+    </ol>
+  </section>
+
+  <section class="info">
+    <div class="grid2">
+      <div class="box">
+        <h2>Limitations</h2>
+        <ul>
+          <li>Can miss tilted or side-facing faces</li>
+          <li>Struggles in low light or strong shadows</li>
+          <li>Can give false positives at low <code>minNeighbors</code></li>
+        </ul>
+      </div>
+      <div class="box">
+        <h2>Next <span>steps</span></h2>
+        <ul>
+          <li>Deep learning detectors (YOLO, MTCNN)</li>
+          <li>Face recognition (who, not just where)</li>
+          <li>Eye and smile detection</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>Built by Pawan Kumar &middot; Python version (<code>face_detection.py</code>) is in the GitHub repo &middot; <a href="../portfolio/">Portfolio</a></footer>
+</div>
+
+<script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var startBtn = document.getElementById('startBtn');
+  var stopBtn = document.getElementById('stopBtn');
+  var video = document.getElementById('video');
+  var canvas = document.getElementById('out');
+  var placeholder = document.getElementById('placeholder');
+  var scaleEl = document.getElementById('scale');
+  var neighEl = document.getElementById('neigh');
+  var edgeEl = document.getElementById('edgeToggle');
+
+  var stream = null, running = false;
+  var classifier = null, cap = null;
+  var src = null, gray = null, edges = null, faces = null;
+  var lastTime = performance.now(), fpsSmooth = 0;
+
+  function setStatus(msg, cls) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  scaleEl.addEventListener('input', function () {
+    document.getElementById('scaleVal').textContent = parseFloat(scaleEl.value).toFixed(2);
+  });
+  neighEl.addEventListener('input', function () {
+    document.getElementById('neighVal').textContent = neighEl.value;
+  });
+
+  // ---------- OpenCV loading ----------
+  function loadOpenCV() {
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://docs.opencv.org/4.x/opencv.js';
+    s.onload = function () {
+      if (typeof cv !== 'undefined' && cv.Mat) { initCascade(); }
+      else if (typeof cv !== 'undefined') { cv['onRuntimeInitialized'] = initCascade; }
+    };
+    s.onerror = function () { setStatus('Could not load OpenCV. Check your internet connection and refresh.', 'err'); };
+    document.body.appendChild(s);
+  }
+
+  function initCascade() {
+    setStatus('Loading face model…');
+    fetch('haarcascade_frontalface_default.xml')
+      .then(function (r) {
+        if (!r.ok) { throw new Error('model file not found'); }
+        return r.arrayBuffer();
+      })
+      .then(function (buf) {
+        cv.FS_createDataFile('/', 'face.xml', new Uint8Array(buf), true, false, false);
+        classifier = new cv.CascadeClassifier();
+        if (!classifier.load('face.xml')) { throw new Error('model failed to load'); }
+        setStatus('Ready. Press Start Camera.', 'ok');
+        startBtn.disabled = false;
+      })
+      .catch(function (e) { setStatus('Error: ' + e.message, 'err'); });
+  }
+
+  // ---------- Camera ----------
+  startBtn.addEventListener('click', function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus('Camera is not supported in this browser (needs HTTPS).', 'err');
+      return;
+    }
+    startBtn.disabled = true;
+    setStatus('Waiting for camera permission…');
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    }).then(function (s) {
+      stream = s;
+      video.srcObject = s;
+      return video.play();
+    }).then(function () {
+      var w = video.videoWidth || 640, h = video.videoHeight || 480;
+      video.width = w; video.height = h;
+      canvas.width = w; canvas.height = h;
+      src = new cv.Mat(h, w, cv.CV_8UC4);
+      gray = new cv.Mat();
+      edges = new cv.Mat();
+      faces = new cv.RectVector();
+      cap = new cv.VideoCapture(video);
+      placeholder.style.display = 'none';
+      canvas.style.display = 'block';
+      stopBtn.disabled = false;
+      running = true;
+      setStatus('Detecting…', 'ok');
+      requestAnimationFrame(loop);
+    }).catch(function (e) {
+      startBtn.disabled = false;
+      setStatus('Camera error: ' + (e && e.message ? e.message : e) + '. Allow camera access and try again.', 'err');
+    });
+  });
+
+  function stopCamera() {
+    running = false;
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    [src, gray, edges].forEach(function (m) { if (m) { m.delete(); } });
+    if (faces) { faces.delete(); }
+    src = gray = edges = faces = null; cap = null;
+    canvas.style.display = 'none';
+    placeholder.style.display = 'block';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    document.getElementById('faceCount').textContent = '0';
+    document.getElementById('fps').textContent = '0';
+    document.getElementById('ms').textContent = '0';
+    setStatus('Stopped. Press Start Camera to run again.');
+  }
+  stopBtn.addEventListener('click', stopCamera);
+
+  // ---------- Main loop ----------
+  function loop() {
+    if (!running) { return; }
+    var t0 = performance.now();
+    try {
+      cap.read(src);
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+      var td = performance.now();
+      faces.delete();
+      faces = new cv.RectVector();
+      var minSize = new cv.Size(60, 60);
+      classifier.detectMultiScale(
+        gray, faces,
+        parseFloat(scaleEl.value), parseInt(neighEl.value, 10), 0, minSize
+      );
+      var detectMs = performance.now() - td;
+
+      var out = src;
+      if (edgeEl.checked) {
+        cv.Canny(gray, edges, 100, 200);
+        cv.cvtColor(edges, src, cv.COLOR_GRAY2RGBA);
+      }
+      for (var i = 0; i < faces.size(); i++) {
+        var r = faces.get(i);
+        cv.rectangle(out, new cv.Point(r.x, r.y), new cv.Point(r.x + r.width, r.y + r.height),
+                     new cv.Scalar(61, 220, 132, 255), 3);
+      }
+      cv.imshow('out', out);
+
+      var now = performance.now();
+      var inst = 1000 / Math.max(1, now - lastTime);
+      lastTime = now;
+      fpsSmooth = fpsSmooth ? fpsSmooth * 0.9 + inst * 0.1 : inst;
+      document.getElementById('faceCount').textContent = faces.size();
+      document.getElementById('fps').textContent = Math.round(fpsSmooth);
+      document.getElementById('ms').textContent = Math.round(detectMs);
+    } catch (e) {
+      setStatus('Processing error: ' + e, 'err');
+      stopCamera();
+      return;
+    }
+    requestAnimationFrame(loop);
+  }
+
+  loadOpenCV();
+})();
+</script>
+</body>
+</html>
